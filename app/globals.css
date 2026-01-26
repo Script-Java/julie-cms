@@ -1,26 +1,294 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Colors - Dark Theme */
+  --background: #0f0f0f;
+  --foreground: #FFFFFF;
+  --card-background: #151515;
+
+  /* Emerald Green Primary Color (logo color) */
+  --primary: #00E676;
+  --primary-hover: #00C853;
+  --primary-light: #B9F6CA;
+
+  /* Brushed Gold Accent */
+  --accent-gold: #D4AF37;
+
+  /* Status Colors */
+  --status-active: #10B981;
+  --status-active-bg: #D1FAE5;
+  --status-pending: #F59E0B;
+  --status-pending-bg: #FEF3C7;
+  --status-inactive: #6B7280;
+  --status-inactive-bg: #F3F4F6;
+
+  /* Grays - Dark Theme Inverted */
+  --gray-50: #0a0a0a;
+  --gray-100: #151515;
+  --gray-200: #1f1f1f;
+  --gray-300: #2a2a2a;
+  --gray-400: #6b6b6b;
+  --gray-500: #9ca3af;
+  --gray-600: #b8b8b8;
+  --gray-700: #d1d1d1;
+  --gray-800: #e5e5e5;
+  --gray-900: #f5f5f5;
+
+  /* Sidebar - Dark Theme */
+  --sidebar-width: 240px;
+  --sidebar-bg: #151515;
+  --sidebar-active-bg: rgba(0, 230, 118, 0.15);
+  /* Emerald green with transparency */
+  --sidebar-active-border: var(--primary);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition: all 0.2s ease-in-out;
+
+  /* Input and form elements */
+  --input: var(--gray-200);
+  --ring: #00E676;
+  /* Emerald green for focus rings */
+
+  /* Text colors */
+  --muted: var(--gray-500);
+  --muted-foreground: var(--gray-400);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--primary);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+}
+
+/* Avatar Styles */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+  color: white;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.avatar-sm {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+
+.avatar-md {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.avatar-lg {
+  width: 48px;
+  height: 48px;
+  font-size: 16px;
+}
+
+/* Avatar Colors (based on first letter) */
+.avatar-color-0 {
+  background-color: #00E676;
+}
+
+.avatar-color-1 {
+  background-color: #D4AF37;
+}
+
+.avatar-color-2 {
+  background-color: #00C853;
+}
+
+.avatar-color-3 {
+  background-color: #69F0AE;
+}
+
+.avatar-color-4 {
+  background-color: #B8860B;
+}
+
+.avatar-color-5 {
+  background-color: #00BFA5;
+}
+
+.avatar-color-6 {
+  background-color: #9E7D3A;
+}
+
+/* Badge Styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badge-active {
+  background-color: var(--status-active-bg);
+  color: var(--status-active);
+}
+
+.badge-pending {
+  background-color: var(--status-pending-bg);
+  color: var(--status-pending);
+}
+
+.badge-lead {
+  background-color: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.badge-inactive {
+  background-color: var(--status-inactive-bg);
+  color: var(--status-inactive);
+}
+
+/* Table Styles */
+.table-container {
+  background: var(--card-background);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--gray-200);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background-color: var(--gray-100);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table td {
+  padding: 16px;
+  border-top: 1px solid var(--gray-200);
+  color: var(--foreground);
+}
+
+.table tbody tr {
+  transition: var(--transition);
+}
+
+.table tbody tr:hover {
+  background-color: var(--gray-100);
+}
+
+/* Sidebar Styles */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--gray-200);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 50;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  margin: 0 8px;
+  border-radius: var(--radius-md);
+  color: var(--gray-600);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--transition);
+  position: relative;
+}
+
+.sidebar-nav-item:hover {
+  background-color: var(--gray-200);
+}
+
+.sidebar-nav-item.active {
+  background-color: var(--sidebar-active-bg);
+  color: var(--primary);
+  border-left: 3px solid var(--sidebar-active-border);
+  padding-left: 13px;
+}
+
+.sidebar-nav-item svg {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+}
+
+/* Main Content Area */
+.main-content {
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  padding: 32px;
+}
+
+/* Utility Classes */
+.text-primary {
+  color: var(--primary);
+}
+
+.bg-primary {
+  background-color: var(--primary);
+}
+
+.shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-md {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
 }
