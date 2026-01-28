@@ -54,7 +54,7 @@ export default function IntegrationsPage() {
             return;
         }
 
-        const scope = 'ZohoMail.messages.ALL,ZohoMail.folders.READ,ZohoMail.accounts.READ,ZohoCalendar.event.ALL,ZohoCalendar.calendar.ALL';
+        const scope = 'ZohoMail.messages.ALL,ZohoMail.folders.READ,ZohoMail.accounts.READ,ZohoCalendar.event.ALL,ZohoCalendar.calendar.READ';
         const authUrl = `https://accounts.zoho.com/oauth/v2/auth?scope=${scope}&client_id=${clientId}&response_type=code&access_type=offline&prompt=consent&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
         window.location.href = authUrl;

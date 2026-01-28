@@ -40,29 +40,29 @@ export async function sendZohoEmail({
 
     if (!accountRes.ok) throw new Error(`Failed to fetch Zoho Mail account info: ${await accountRes.text()}`);
     const accountData = await accountRes.json();
-    const accountId = accountData.data?.[0]?.accountId;
-    if (!accountId) throw new Error('No Zoho Mail account found');
+    // console.log('[Zoho Mail] Account Data:', JSON.stringify(accountData, null, 2));
 
-    // 2. Send using Zoho API
+    const accountId = accountData.data?.[0]?.accountId;
+    // Try to find the best from address
+    const account = accountData.data?.[0];
+    const fromAddress = account?.primaryEmailAddress || account?.incomingUserName;
+
+    console.log('[Zoho Mail] Selected From Address:', fromAddress);
+
+    if (!accountId) throw new Error('No Zoho Mail account found');
+    if (!fromAddress) throw new Error('No Zoho Mail from address found');
+
+    // 2. Create draft first
     const payload = {
+        fromAddress: fromAddress,
         toAddress: to,
         subject: subject,
-        content: html || text || '', // Prioritize HTML
-        askReceipt: "yes" // Optional, often implies 'send' context in older APIs but standard POST /messages sends it.
+        content: html || text || '',
+        askReceipt: "yes"
     };
 
-    // Note: To strictly SEND and not just draft, typically POST /messages is sufficient.
-    // However, some versions require action='send'. 
-    // Usually, the body for sending includes "mode": "send" or similar if ambiguous.
-    // But testing usually shows POST creates and sends.
-
-    // Check usage of createZohoDraft which uses same endpoint. 
-    // If that creates draft, we might need to add `mode` or `action` param.
-    // Actually, looking at docs, often `POST /messages` creates a DRAFT.
-    // To send, you POST `.../messages?action=submit`.
-    // Let's try adding action=submit param to the URL.
-
-    const response = await fetch(`${apiUrl}/accounts/${accountId}/messages?action=submit`, {
+    // Create the draft
+    const draftResponse = await fetch(`${apiUrl}/accounts/${accountId}/messages`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -71,12 +71,34 @@ export async function sendZohoEmail({
         body: JSON.stringify(payload)
     });
 
-    if (!response.ok) {
-        const err = await response.text();
+    if (!draftResponse.ok) {
+        const err = await draftResponse.text();
+        throw new Error(`Failed to create draft: ${err}`);
+    }
+
+    const draftData = await draftResponse.json();
+    const messageId = draftData.data?.messageId;
+
+    if (!messageId) {
+        throw new Error('Failed to get message ID from draft');
+    }
+
+    // 3. Send the draft using the correct endpoint
+    const sendResponse = await fetch(`${apiUrl}/accounts/${accountId}/messages/${messageId}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ mode: 'send' })
+    });
+
+    if (!sendResponse.ok) {
+        const err = await sendResponse.text();
         throw new Error(`Failed to send email: ${err}`);
     }
 
-    return await response.json();
+    return await sendResponse.json();
 }
 
 export async function listZohoEmails(userId: string, clientEmail: string) {
@@ -102,20 +124,25 @@ export async function listZohoEmails(userId: string, clientEmail: string) {
 
     // 2. Search Messages
     const searchParams = new URLSearchParams({
-        searchKey: `email:${clientEmail}`,
+        searchKey: `entire:${clientEmail}`,
         limit: '20'
     });
 
-    const response = await fetch(`${apiUrl}/accounts/${accountId}/messages/search?${searchParams.toString()}`, {
+    const searchUrl = `${apiUrl}/accounts/${accountId}/messages/search?${searchParams.toString()}`;
+    console.log(`[Zoho] Searching emails with URL: ${searchUrl}`);
+
+    const response = await fetch(searchUrl, {
         headers: { 'Authorization': `Bearer ${accessToken}` }
     });
 
     if (!response.ok) {
         const err = await response.text();
+        console.error(`[Zoho] Search failed: ${err}`);
         throw new Error(`Failed to fetch emails: ${err}`);
     }
 
     const data = await response.json();
+    console.log(`[Zoho] Search response preview:`, JSON.stringify(data.data?.[0] || {}, null, 2));
     return data.data || [];
 }
 
@@ -131,10 +158,14 @@ export async function createZohoDraft(userId: string, to: string, subject: strin
     if (!accountRes.ok) throw new Error(`Failed to fetch Zoho Mail account info: ${await accountRes.text()}`);
     const accountData = await accountRes.json();
     const accountId = accountData.data?.[0]?.accountId;
+    const account = accountData.data?.[0];
+    const fromAddress = account?.primaryEmailAddress || account?.incomingUserName;
+
     if (!accountId) throw new Error('No Zoho Mail account found');
 
     // 2. Create Draft using Zoho API
     const payload = {
+        fromAddress: fromAddress,
         toAddress: to,
         subject: subject,
         content: content,

@@ -14,6 +14,7 @@ export function Logo({ size = 48, className }: LogoProps) {
             alt="Julie CMS Logo"
             width={size}
             height={size}
+            style={{ height: 'auto' }}
             className={cn("object-contain", className)}
         />
     )

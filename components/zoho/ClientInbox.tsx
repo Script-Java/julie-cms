@@ -82,29 +82,42 @@ export function ClientInbox({ clientEmail }: { clientEmail: string }) {
                                     No emails found.
                                 </div>
                             ) : (
-                                emails.map((email) => (
-                                    <div key={email.messageId} className="p-4 rounded-lg bg-zinc-900/50 border border-white/5 hover:border-[#00E676]/30 transition-colors group">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h4 className="font-semibold text-white group-hover:text-[#00E676] transition-colors line-clamp-1">
-                                                {email.subject || '(No Subject)'}
-                                            </h4>
-                                            <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
-                                                {new Date(email.sentDateInGMT).toLocaleDateString()}
-                                            </span>
+                                emails.map((email) => {
+                                    const dateStr = email.sentDateInGMT || (email as any).receivedTime || (email as any).date || (email as any).sentDate;
+                                    let displayDate = 'Invalid Date';
+                                    try {
+                                        const date = new Date(Number(dateStr) || dateStr); // Handle timestamp numbers or strings
+                                        if (!isNaN(date.getTime())) {
+                                            displayDate = date.toLocaleDateString();
+                                        }
+                                    } catch (e) { console.error('Date parse error', e); }
+
+                                    console.log('Email object:', email); // Debug log
+
+                                    return (
+                                        <div key={email.messageId} className="p-4 rounded-lg bg-zinc-900/50 border border-white/5 hover:border-[#00E676]/30 transition-colors group">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h4 className="font-semibold text-white group-hover:text-[#00E676] transition-colors line-clamp-1">
+                                                    {email.subject || '(No Subject)'}
+                                                </h4>
+                                                <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                                                    {displayDate}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-gray-400 line-clamp-2 mb-3">
+                                                {email.summary}
+                                            </p>
+                                            <div className="flex items-center justify-between">
+                                                <Badge variant="inactive" className="bg-transparent border-white/10 text-xs text-gray-500">
+                                                    {email.fromAddress.includes(clientEmail) ? 'Received' : 'Sent'}
+                                                </Badge>
+                                                <Button variant="ghost" size="sm" className="h-7 text-xs text-gray-400 hover:text-[#00E676]" onClick={() => setShowQuickReply(true)}>
+                                                    <Reply className="w-3 h-3 mr-1" /> Quick Reply
+                                                </Button>
+                                            </div>
                                         </div>
-                                        <p className="text-sm text-gray-400 line-clamp-2 mb-3">
-                                            {email.summary}
-                                        </p>
-                                        <div className="flex items-center justify-between">
-                                            <Badge variant="inactive" className="bg-transparent border-white/10 text-xs text-gray-500">
-                                                {email.fromAddress.includes(clientEmail) ? 'Received' : 'Sent'}
-                                            </Badge>
-                                            <Button variant="ghost" size="sm" className="h-7 text-xs text-gray-400 hover:text-[#00E676]" onClick={() => setShowQuickReply(true)}>
-                                                <Reply className="w-3 h-3 mr-1" /> Quick Reply
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))
+                                    )
+                                })
                             )}
                         </div>
                     </div>
