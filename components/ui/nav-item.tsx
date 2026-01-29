@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, CheckSquare, Settings, Calendar } from 'lucide-react'
+import { LayoutDashboard, Users, CheckSquare, Settings, Calendar, Bell, Sun } from 'lucide-react'
 
 const iconMap = {
     dashboard: LayoutDashboard,
@@ -10,15 +10,18 @@ const iconMap = {
     tasks: CheckSquare,
     settings: Settings,
     calendar: Calendar,
+    notifications: Bell,
+    today: Sun,
 }
 
 interface NavItemProps {
     href: string
     icon: keyof typeof iconMap
     children: React.ReactNode
+    badge?: number
 }
 
-export function NavItem({ href, icon, children }: NavItemProps) {
+export function NavItem({ href, icon, children, badge }: NavItemProps) {
     const pathname = usePathname()
     const isActive = pathname === href || pathname?.startsWith(href + '/')
     const Icon = iconMap[icon]
@@ -26,10 +29,17 @@ export function NavItem({ href, icon, children }: NavItemProps) {
     return (
         <Link
             href={href}
-            className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+            className={`sidebar-nav-item ${isActive ? 'active' : ''} flex items-center justify-between group`}
         >
-            <Icon />
-            {children}
+            <div className="flex items-center gap-3">
+                <Icon className="w-5 h-5" />
+                <span>{children}</span>
+            </div>
+            {badge !== undefined && badge > 0 && (
+                <span className="bg-[#00E676] text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {badge}
+                </span>
+            )}
         </Link>
     )
 }

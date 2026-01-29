@@ -115,8 +115,8 @@ export function ZohoClientImporter() {
                                 <div
                                     key={contact.email}
                                     className={`flex items-center gap-3 p-3 rounded-md cursor-pointer border transition-colors ${selectedEmails.has(contact.email)
-                                            ? 'bg-[#00E676]/10 border-[#00E676]/50'
-                                            : 'bg-[#222] border-transparent hover:bg-[#2a2a2a]'
+                                        ? 'bg-[#00E676]/10 border-[#00E676]/50'
+                                        : 'bg-[#222] border-transparent hover:bg-[#2a2a2a]'
                                         }`}
                                     onClick={() => toggleSelection(contact.email)}
                                 >
@@ -125,8 +125,23 @@ export function ZohoClientImporter() {
                                         {selectedEmails.has(contact.email) && <Check className="w-3.5 h-3.5 text-black" />}
                                     </div>
                                     <div className="flex-1">
-                                        <div className="text-white font-medium">{contact.name || 'Unknown Name'}</div>
-                                        <div className="text-sm text-gray-400">{contact.email}</div>
+                                        <div className="flex justify-between items-center">
+                                            <div className="text-white font-medium">{contact.name || 'Unknown Name'}</div>
+                                            {contact.company && contact.company !== 'N/A' && (
+                                                <div className="text-xs text-gray-500 bg-white/5 py-0.5 px-2 rounded">
+                                                    {contact.company}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="text-sm text-gray-400 flex items-center gap-2">
+                                            <span>{contact.email}</span>
+                                            {contact.phone && contact.phone !== 'N/A' && (
+                                                <>
+                                                    <span className="w-1 h-1 rounded-full bg-gray-600" />
+                                                    <span>{contact.phone}</span>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))}

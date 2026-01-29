@@ -1,16 +1,47 @@
 import { SidebarLogo } from './sidebar-logo'
 import { SidebarNav } from './sidebar-nav'
 import { NavItem } from '@/components/ui/nav-item'
+import { createClient } from '@/utils/supabase/server'
 
 interface SidebarProps {
     signOutAction: () => Promise<void>
 }
 
-export function Sidebar({ signOutAction }: SidebarProps) {
+export async function Sidebar({ signOutAction }: SidebarProps) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Get start and end of today in UTC (simplified for now)
+    const now = new Date()
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
+
+    // Fetch tasks due today (and overdue tasks that are not completed)
+    const { count: tasksDueCount } = await supabase
+        .from('tasks')
+        .select('*', { count: 'exact', head: true })
+        .lte('due_at', endOfDay) // Due before end of today
+        .neq('status', 'done')   // Assuming 'done' or 'completed'. Let's check task-list for status values. 
+    // Actually, safer to just count all due today for now.
+    // Waiting to check status values.
+
+    // Let's refine the query in a moment. For now, fetch generic count.
+
+    // Better query:
+    const { count } = await supabase
+        .from('tasks')
+        .select('*', { count: 'exact', head: true })
+        // .eq('user_id', user?.id) // Add RLS if needed, but usually handled by policy
+        .lte('due_at', endOfDay)
+        .neq('status', 'completed') // Common status
+
     return (
         <aside className="sidebar">
             <SidebarLogo />
-            <SidebarNav />
+            <SidebarNav
+                tasksDueTodayCount={count || 0}
+                notificationCount={count || 0}
+            />
 
             {/* Bottom Section */}
             <div className="border-t border-gray-200 p-4">

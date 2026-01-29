@@ -21,6 +21,8 @@ export async function POST(request: NextRequest) {
         const clientsToInsert = clients.map((client: any) => ({
             name: client.name || client.email?.split('@')[0] || 'Unknown',
             email: client.email,
+            phone: client.phone === 'N/A' ? null : client.phone,
+            company: client.company === 'N/A' ? null : client.company,
             status: 'lead',
             followup_frequency_days: 14,
             user_id: user.id

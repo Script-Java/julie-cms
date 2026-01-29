@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { createClient } from '@/utils/supabase/server'
 import { Sidebar } from '@/components/layout/sidebar'
+import { BrowserNotifications } from '@/components/browser-notifications'
+
 import { redirect } from 'next/navigation'
 
 const inter = Inter({
@@ -39,6 +41,8 @@ export default async function RootLayout({
       <body className={inter.className}>
         {user ? (
           <div className="flex min-h-screen">
+            <BrowserNotifications />
+
             <Sidebar signOutAction={signOut} />
 
             {/* Main Content */}

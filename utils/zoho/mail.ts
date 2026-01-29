@@ -1,9 +1,10 @@
 import { getZohoAccessToken } from './auth';
+export { getZohoAccessToken };
 import { createClient } from '../supabase/server';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 // Helper to get location specifics
-async function getZohoLocation(userId: string, supabaseClient?: SupabaseClient) {
+export async function getZohoLocation(userId: string, supabaseClient?: SupabaseClient) {
     const supabase = supabaseClient || await createClient();
     const { data } = await supabase.from('user_integrations').select('dc_location').eq('user_id', userId).single();
     const location = data?.dc_location || 'us';
@@ -52,7 +53,7 @@ export async function sendZohoEmail({
     if (!accountId) throw new Error('No Zoho Mail account found');
     if (!fromAddress) throw new Error('No Zoho Mail from address found');
 
-    // 2. Create draft first
+    // 2. Create and Send in one step
     const payload = {
         fromAddress: fromAddress,
         toAddress: to,
@@ -61,36 +62,14 @@ export async function sendZohoEmail({
         askReceipt: "yes"
     };
 
-    // Create the draft
-    const draftResponse = await fetch(`${apiUrl}/accounts/${accountId}/messages`, {
+    // Send the email directly
+    const sendResponse = await fetch(`${apiUrl}/accounts/${accountId}/messages`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
-    });
-
-    if (!draftResponse.ok) {
-        const err = await draftResponse.text();
-        throw new Error(`Failed to create draft: ${err}`);
-    }
-
-    const draftData = await draftResponse.json();
-    const messageId = draftData.data?.messageId;
-
-    if (!messageId) {
-        throw new Error('Failed to get message ID from draft');
-    }
-
-    // 3. Send the draft using the correct endpoint
-    const sendResponse = await fetch(`${apiUrl}/accounts/${accountId}/messages/${messageId}`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ mode: 'send' })
     });
 
     if (!sendResponse.ok) {
@@ -146,6 +125,48 @@ export async function listZohoEmails(userId: string, clientEmail: string) {
     return data.data || [];
 }
 
+export async function getZohoEmailContent(userId: string, messageId: string, folderId?: string) {
+    const accessToken = await getZohoAccessToken(userId);
+    const { apiUrl } = await getZohoLocation(userId);
+
+    // 1. Get Account ID
+    const accountRes = await fetch(`${apiUrl}/accounts`, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    if (!accountRes.ok) throw new Error(`Failed to fetch Zoho Mail account info: ${await accountRes.text()}`);
+    const accountData = await accountRes.json();
+    const accountId = accountData.data?.[0]?.accountId;
+
+    if (!accountId) throw new Error('No Zoho Mail account found');
+
+    // 2. Fetch Message Content
+    // API: GET /api/accounts/{accountId}/folders/{folderId}/messages/{messageId}/content
+    let url;
+    if (folderId) {
+        url = `${apiUrl}/accounts/${accountId}/folders/${folderId}/messages/${messageId}/content`;
+    } else {
+        // Fallback: try the endpoint without folderId, though this often requires folderId context
+        url = `${apiUrl}/accounts/${accountId}/messages/${messageId}/content`;
+    }
+
+    console.log(`[Zoho] Fetching content URL: ${url}`);
+
+    const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    if (!response.ok) {
+        // If the first attempt fails without folderId, we might want to log it, but for now just throw
+        const errText = await response.text();
+        console.error(`[Zoho] Content fetch failed: ${errText}`);
+        throw new Error(`Failed to fetch email content: ${errText}`);
+    }
+
+    const data = await response.json();
+    return data.data || {};
+}
+
 export async function createZohoDraft(userId: string, to: string, subject: string, content: string, supabaseClient?: SupabaseClient) {
     const accessToken = await getZohoAccessToken(userId, supabaseClient);
     const { apiUrl } = await getZohoLocation(userId, supabaseClient);
@@ -189,7 +210,7 @@ export async function createZohoDraft(userId: string, to: string, subject: strin
     return await response.json();
 }
 
-export async function getSentFolderId(userId: string) {
+export async function getFolderId(userId: string, folderName: string) {
     const accessToken = await getZohoAccessToken(userId);
     const { apiUrl } = await getZohoLocation(userId);
 
@@ -211,15 +232,18 @@ export async function getSentFolderId(userId: string) {
     if (!foldersRes.ok) throw new Error(`Failed to fetch folders: ${await foldersRes.text()}`);
     const foldersData = await foldersRes.json();
 
-    // Find folder with name 'Sent' or path containing 'Sent'
-    // Zoho usually returns a standard list. The sent folder path might be different but usually "Sent" is the name.
-    const sentFolder = foldersData.data?.find((f: any) => f.name === 'Sent' || f.path.endsWith('Sent'));
+    // Find folder
+    const folder = foldersData.data?.find((f: any) => f.name === folderName || f.path.endsWith(folderName));
 
-    if (!sentFolder) {
-        throw new Error('Could not find Sent folder in Zoho Mail');
+    if (!folder) {
+        throw new Error(`Could not find ${folderName} folder in Zoho Mail`);
     }
 
-    return { accountId, folderId: sentFolder.folderId };
+    return { accountId, folderId: folder.folderId };
+}
+
+export async function getSentFolderId(userId: string) {
+    return getFolderId(userId, 'Sent');
 }
 
 export async function fetchSentMessages(userId: string, limit: number = 50) {
@@ -241,6 +265,31 @@ export async function fetchSentMessages(userId: string, limit: number = 50) {
 
     if (!response.ok) {
         throw new Error(`Failed to fetch sent messages: ${await response.text()}`);
+    }
+
+    const data = await response.json();
+    return data.data || [];
+}
+
+export async function fetchInboxMessages(userId: string, limit: number = 20) {
+    const accessToken = await getZohoAccessToken(userId);
+    const { apiUrl } = await getZohoLocation(userId);
+    const { accountId, folderId } = await getFolderId(userId, 'Inbox');
+
+    const params = new URLSearchParams({
+        folderId: folderId,
+        limit: limit.toString(),
+    });
+
+    const url = `${apiUrl}/accounts/${accountId}/messages/view?${params.toString()}`;
+    console.log('Fetching Zoho inbox messages from:', url);
+
+    const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch inbox messages: ${await response.text()}`);
     }
 
     const data = await response.json();

@@ -61,6 +61,9 @@
   --ring: #00E676;
   /* Emerald green for focus rings */
 
+  /* Fix for date picker icon color in dark mode */
+  color-scheme: dark;
+
   /* Text colors */
   --muted: var(--gray-500);
   --muted-foreground: var(--gray-400);

@@ -6,6 +6,8 @@ import { notFound, redirect } from 'next/navigation'
 import { Phone, Mail, Clock, CheckCircle, Building2 } from 'lucide-react'
 import { ClientInbox } from '@/components/zoho/ClientInbox'
 
+import { logContact, snooze } from '@/app/clients/actions'
+
 export default async function ClientDetailPage({
     params,
 }: {
@@ -28,50 +30,6 @@ export default async function ClientDetailPage({
         .eq('client_id', cid)
         .order('created_at', { ascending: false })
 
-    // Actions
-    async function logContact(formData: FormData) {
-        'use server'
-        const supabase = await createClient()
-        const type = formData.get('type') as string
-        const summary = formData.get('summary') as string
-
-        // 1. Get user
-        const { data: { user } } = await supabase.auth.getUser()
-
-        // 2. Insert touchpoint with user_id
-        await supabase.from('touchpoints').insert({
-            client_id: cid,
-            type,
-            summary,
-            user_id: user?.id
-        })
-
-        // 2. Update client
-        const nextFollowup = new Date()
-        nextFollowup.setDate(nextFollowup.getDate() + (client?.followup_frequency_days || 14))
-
-        await supabase.from('clients').update({
-            last_contacted_at: new Date().toISOString(),
-            next_followup_at: nextFollowup.toISOString()
-        }).eq('id', cid)
-
-        redirect(`/clients/${cid}`)
-    }
-
-    async function snooze() {
-        'use server'
-        const supabase = await createClient()
-        const current = client?.next_followup_at ? new Date(client.next_followup_at) : new Date()
-        // Add 3 days
-        current.setDate(current.getDate() + 3)
-
-        await supabase.from('clients').update({
-            next_followup_at: current.toISOString()
-        }).eq('id', cid)
-
-        redirect(`/clients/${cid}`)
-    }
-
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -90,6 +48,7 @@ export default async function ClientDetailPage({
                 </div>
                 <div className="flex gap-2">
                     <form action={snooze}>
+                        <input type="hidden" name="clientId" value={cid} />
                         <Button variant="outline" type="submit">
                             <Clock className="w-4 h-4 mr-2" /> Snooze Follow-up
                         </Button>
@@ -147,13 +106,14 @@ export default async function ClientDetailPage({
                 <div className="md:col-span-2 space-y-6">
                     {/* Zoho Inbox */}
                     {client.email && (
-                        <ClientInbox clientEmail={client.email} />
+                        <ClientInbox clientEmail={client.email} clientId={cid} />
                     )}
 
                     {/* Log Contact Form */}
                     <div className="bg-[#151515] p-4 rounded-lg border border-white/10 shadow-sm">
                         <h3 className="font-semibold mb-3">Log Interaction</h3>
                         <form action={logContact} className="flex flex-col gap-3">
+                            <input type="hidden" name="clientId" value={cid} />
                             <div className="flex gap-2">
                                 <select name="type" className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm" defaultValue="note">
                                     <option value="call">Call</option>

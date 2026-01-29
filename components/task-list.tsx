@@ -89,12 +89,7 @@ export function TaskList({ tasks, completeTaskAction, deleteTasksAction }: TaskL
                                     onChange={() => toggleSelect(task.id)}
                                 />
 
-                                <form action={completeTaskAction}>
-                                    <input type="hidden" name="id" value={task.id} />
-                                    <button type="submit" className="text-gray-400 hover:text-[#00E676] transition-colors" title="Mark Complete">
-                                        <Circle className="w-5 h-5" />
-                                    </button>
-                                </form>
+
 
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">

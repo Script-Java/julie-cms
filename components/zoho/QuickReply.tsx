@@ -5,14 +5,18 @@ import { Send, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
+import { logContact } from '@/app/clients/actions';
+
 interface QuickReplyProps {
     to: string;
+    clientId: string; // Add clientId for logging
+    subject?: string; // Add subject prop
     onClose: () => void;
     onSent: () => void;
 }
 
-export function QuickReply({ to, onClose, onSent }: QuickReplyProps) {
-    const [subject, setSubject] = useState('');
+export function QuickReply({ to, clientId, subject: initialSubject, onClose, onSent }: QuickReplyProps) {
+    const [subject, setSubject] = useState(initialSubject || '');
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
 
@@ -20,15 +24,26 @@ export function QuickReply({ to, onClose, onSent }: QuickReplyProps) {
         if (!subject || !message) return;
         setSending(true);
         try {
+            // 1. Send Email
             const res = await fetch('/api/zoho/mail', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ to, subject, message })
             });
+
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 throw new Error(data.error || 'Failed to send');
             }
+
+            // 2. Log Interaction
+            const formData = new FormData();
+            formData.append('clientId', clientId);
+            formData.append('type', 'email'); // Log as email
+            formData.append('summary', `Sent email: ${subject}`);
+
+            await logContact(formData);
+
             onSent();
             onClose();
         } catch (error: any) {

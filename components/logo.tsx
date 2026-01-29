@@ -12,9 +12,7 @@ export function Logo({ size = 48, className }: LogoProps) {
         <Image
             src={logo}
             alt="Julie CMS Logo"
-            width={size}
-            height={size}
-            style={{ height: 'auto' }}
+            style={{ height: size, width: 'auto' }}
             className={cn("object-contain", className)}
         />
     )

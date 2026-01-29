@@ -21,8 +21,14 @@ export async function GET(request: NextRequest) {
         const emails = await listZohoEmails(user.id, clientEmail);
         return NextResponse.json({ emails });
     } catch (error: any) {
-        console.error('Error fetching emails:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error('Error fetching emails in /api/zoho/mail:', error);
+        if (error.stack) {
+            console.error(error.stack);
+        }
+        return NextResponse.json(
+            { error: error.message || 'Internal Server Error', details: error.toString() },
+            { status: 500 }
+        );
     }
 }
 

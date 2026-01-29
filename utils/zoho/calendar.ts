@@ -17,7 +17,7 @@ async function getPrimaryCalendarUid(accessToken: string, apiUrl: string, userId
         console.log("Fetching Zoho calendars from:", `${apiUrl}/calendars`);
         return await fetch(`${apiUrl}/calendars`, {
             headers: {
-                Authorization: `Zoho-oauthtoken ${token}`,
+                Authorization: `Bearer ${token}`,
             },
         });
     };
@@ -79,27 +79,30 @@ export async function createZohoCalendarEvent(userId: string, event: ZohoEvent) 
     // Format: yyyyMMddTHHmmssZ
     const formatTime = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-    const payload = {
-        eventdata: {
-            title: event.title,
-            dateandtime: {
-                start: formatTime(event.start),
-                end: formatTime(event.end),
-                timezone: "UTC"
-            },
-            description: event.description || '',
-            location: event.location || '',
-            attendees: event.attendees ? event.attendees.map(email => ({ email })) : []
-        }
+    const eventData = {
+        title: event.title,
+        dateandtime: {
+            start: formatTime(event.start),
+            end: formatTime(event.end),
+            timezone: "UTC"
+        },
+        description: event.description || '',
+        location: event.location || '',
+        attendees: event.attendees ? event.attendees.map(email => ({ email })) : []
     };
+
+    // Use URLSearchParams to send as application/x-www-form-urlencoded
+    // This is often more reliable for Zoho APIs complaining about missing JSON parameters
+    const params = new URLSearchParams();
+    params.append('eventdata', JSON.stringify(eventData));
 
     const response = await fetch(`${apiUrl}/calendars/${calendarUid}/events`, {
         method: 'POST',
         headers: {
-            Authorization: `Zoho-oauthtoken ${token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            // Content-Type is set automatically
         },
-        body: JSON.stringify(payload),
+        body: params,
     });
 
     if (!response.ok) {
@@ -117,7 +120,7 @@ export async function listZohoCalendarEvents(userId: string) {
 
     const response = await fetch(`${apiUrl}/calendars/${calendarUid}/events`, {
         headers: {
-            Authorization: `Zoho-oauthtoken ${token}`,
+            Authorization: `Bearer ${token}`,
         },
     });
 
@@ -138,7 +141,7 @@ export async function updateZohoCalendarEvent(userId: string, eventUid: string, 
 
     const formatTime = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-    const payload = {
+    const eventData = {
         eventdata: {
             title: event.title,
             dateandtime: {
@@ -152,13 +155,16 @@ export async function updateZohoCalendarEvent(userId: string, eventUid: string, 
         }
     };
 
+    // Update likely expects the same format
+    const params = new URLSearchParams();
+    params.append('eventdata', JSON.stringify(eventData.eventdata));
+
     const response = await fetch(`${apiUrl}/calendars/${calendarUid}/events/${eventUid}`, {
         method: 'PUT',
         headers: {
-            Authorization: `Zoho-oauthtoken ${token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
+        body: params,
     });
 
     if (!response.ok) {
@@ -177,7 +183,7 @@ export async function deleteZohoCalendarEvent(userId: string, eventUid: string) 
     const response = await fetch(`${apiUrl}/calendars/${calendarUid}/events/${eventUid}`, {
         method: 'DELETE',
         headers: {
-            Authorization: `Zoho-oauthtoken ${token}`,
+            Authorization: `Bearer ${token}`,
         },
     });
 

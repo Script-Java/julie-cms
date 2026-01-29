@@ -26,10 +26,17 @@ export async function getZohoAccessToken(userId: string, supabaseClient?: Supaba
     const location = integration.dc_location || 'us';
     const tld = location === 'us' ? 'com' : location;
 
+    const clientId = process.env.NEXT_PUBLIC_ZOHO_CLIENT_ID;
+    const clientSecret = process.env.ZOHO_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+        throw new Error('Missing Zoho credentials in environment variables (NEXT_PUBLIC_ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET)');
+    }
+
     const params = new URLSearchParams({
         refresh_token: integration.refresh_token,
-        client_id: process.env.NEXT_PUBLIC_ZOHO_CLIENT_ID!,
-        client_secret: process.env.ZOHO_CLIENT_SECRET!,
+        client_id: clientId,
+        client_secret: clientSecret,
         grant_type: 'refresh_token',
     });
 

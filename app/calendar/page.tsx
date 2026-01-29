@@ -235,10 +235,12 @@ export default function CalendarPage() {
                         <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
-                    <Button className="bg-[#00E676] text-black hover:bg-[#00c853]">
-                        <Plus className="w-4 h-4 mr-2" />
-                        New Event
-                    </Button>
+                    <Link href="/calendar/new">
+                        <Button className="bg-[#00E676] text-black hover:bg-[#00c853]">
+                            <Plus className="w-4 h-4 mr-2" />
+                            New Event
+                        </Button>
+                    </Link>
                 </div>
             </div>
 
